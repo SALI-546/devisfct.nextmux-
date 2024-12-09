@@ -10,13 +10,15 @@ class DatabaseSeeder extends Seeder
     /**
      * Seed the application's database.
      */
-    public function run(): void
+    public function run()
     {
-        // \App\Models\User::factory(10)->create();
-
-        // \App\Models\User::factory()->create([
-        //     'name' => 'Test User',
-        //     'email' => 'test@example.com',
-        // ]);
+        // Appeler le seeder des utilisateurs et des clients
+        $this->call([
+            UserSeeder::class,
+            ClientSeeder::class,
+            ProductSeeder::class,
+            DefaultUserSeeder::class,
+            // Ajoutez d'autres seeders ici si nécessaire
+        ]);
     }
 }

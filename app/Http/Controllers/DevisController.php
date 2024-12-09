@@ -10,4 +10,9 @@ class DevisController extends Controller
     {
         return view('devis.index');
     }
+
+    public function view($id)
+    {
+        return view('devis.view');
+    }
 }

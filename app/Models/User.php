@@ -2,31 +2,35 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Foundation\Auth\User as Authenticatable; // Utilisation de l'authentification Laravel
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasFactory;
+   
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
+        'nm_id',
         'name',
         'email',
-        'password',
+        'password', // Ajout de 'password' aux attributs fillable
+        'is_confirmed',
+        'is_admin',
+        'is_desabled',
+        'have_complete',
+        'is_online',
+        'fcm_token',
+        'double_auth_code',
+        'devise',
+        'double_auth_code_confirmed',
+        'last_connexion',
     ];
 
     /**
-     * The attributes that should be hidden for serialization.
+     * Les attributs qui doivent être cachés pour les tableaux.
      *
-     * @var array<int, string>
+     * @var array
      */
     protected $hidden = [
         'password',
@@ -34,12 +38,10 @@ class User extends Authenticatable
     ];
 
     /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
+     * Un utilisateur peut avoir plusieurs clients.
      */
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-        'password' => 'hashed',
-    ];
+    public function clients()
+    {
+        return $this->hasMany(Client::class);
+    }
 }

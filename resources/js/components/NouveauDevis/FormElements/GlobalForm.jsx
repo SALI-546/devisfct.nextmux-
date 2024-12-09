@@ -1,3 +1,5 @@
+// src/components/FormElements/GlobalForm.jsx
+
 import React, { useState } from 'react';
 import { Info } from 'lucide-react';
 import CustomDatePicker from '../CustomizeInputs/CustomDatePicker';
@@ -9,15 +11,11 @@ const GlobalForm = ({ formData, handleInputChange, setFormData }) => {
     const handleLogoChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setLogo(reader.result); // Met à jour l'état du logo
-                setFormData((prevState) => ({
-                    ...prevState,
-                    logo: reader.result,  // Sauvegarde le logo dans formData
-                }));
-            };
-            reader.readAsDataURL(file);
+            setLogo(file);
+            setFormData((prevState) => ({
+                ...prevState,
+                logo: file,  // Sauvegarde le fichier du logo dans formData
+            }));
         }
     };
 
@@ -37,7 +35,7 @@ const GlobalForm = ({ formData, handleInputChange, setFormData }) => {
     const handleCheckboxChange = (e) => {
         setFormData({
             ...formData,
-            includeTva: e.target.checked,
+            include_tva: e.target.checked,  // Utiliser 'include_tva' pour correspondre au backend
         });
     };
 
@@ -71,8 +69,8 @@ const GlobalForm = ({ formData, handleInputChange, setFormData }) => {
             <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Date d'émission</label>
                 <CustomDatePicker
-                    value={formData.date}
-                    onChange={(value) => handleInputChange("date", value)}
+                    value={formData.date_emission} // Utiliser 'date_emission' pour correspondre au backend
+                    onChange={(value) => handleInputChange("date_emission", value)}
                 />
             </div>
 
@@ -92,7 +90,7 @@ const GlobalForm = ({ formData, handleInputChange, setFormData }) => {
                     />
                     {logo ? (
                         <div className="flex flex-col items-center">
-                            <img src={logo} alt="Logo entreprise" className="h-24 mb-2 object-contain" />
+                            <img src={URL.createObjectURL(logo)} alt="Logo entreprise" className="h-24 mb-2 object-contain" />
                             <p className="text-sm text-gray-500">Cliquez ou glissez-déposez pour modifier.</p>
                         </div>
                     ) : (
@@ -106,14 +104,14 @@ const GlobalForm = ({ formData, handleInputChange, setFormData }) => {
             {/* Checkbox pour inclure la TVA */}
             <div className="flex items-center mt-4">
                 <input
-                    id="includeTvaCheckbox"
+                    id="include_tvaCheckbox"
                     type="checkbox"
-                    checked={formData.includeTva}
+                    checked={formData.include_tva}
                     onChange={handleCheckboxChange}
                     className="w-5 h-5 border border-gray-300 rounded text-nextmux-green focus:ring-2 focus:ring-nextmux-green focus:ring-offset-2 accent-nextmux-green cursor-pointer"
                 />
                 <label
-                    htmlFor="includeTvaCheckbox"
+                    htmlFor="include_tvaCheckbox"
                     className="ml-2 text-sm font-medium text-gray-700 cursor-pointer"
                 >
                     Cochez cette case si vous souhaitez inclure la TVA
@@ -121,6 +119,7 @@ const GlobalForm = ({ formData, handleInputChange, setFormData }) => {
             </div>
         </div>
     );
+
 };
 
 export default GlobalForm;

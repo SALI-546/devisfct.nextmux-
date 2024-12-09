@@ -16,20 +16,24 @@ const ClientForm = ({ formData, handleClientChange, setFormData }) => {
             setFormData((prev) => ({
                 ...prev,
                 client: {
+                    ...prev.client,
                     entreprise: company.name,
                     email: company.email,
                     telephone: company.telephone,
                     adresse: company.adresse,
+                    // 'nom' reste à remplir manuellement
                 },
             }));
         } else {
             setFormData((prev) => ({
                 ...prev,
                 client: {
+                    ...prev.client,
                     entreprise: selectedCompany,
                     email: "",
                     telephone: "",
                     adresse: "",
+                    // 'nom' reste à remplir manuellement
                 },
             }));
         }
@@ -48,6 +52,20 @@ const ClientForm = ({ formData, handleClientChange, setFormData }) => {
                 />
             </div>
 
+            {/* Nom du contact */}
+            <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Nom du contact</label>
+                <input
+                    type="text"
+                    value={formData.client.nom}
+                    onChange={(e) => handleClientChange("nom", e.target.value)}
+                    maxLength={255}
+                    className="w-full p-3 border rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-nextmux-green"
+                    placeholder="Nom du contact"
+                    required
+                />
+            </div>
+
             {/* Email */}
             <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
@@ -58,6 +76,7 @@ const ClientForm = ({ formData, handleClientChange, setFormData }) => {
                     maxLength={63}
                     className="w-full p-3 border rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-nextmux-green"
                     placeholder="email@exemple.com"
+                    required
                 />
             </div>
 
@@ -71,6 +90,7 @@ const ClientForm = ({ formData, handleClientChange, setFormData }) => {
                     className="w-full p-3 border rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-nextmux-green"
                     placeholder="+229 XX XX XX XX"
                     maxLength={22}
+                    required
                 />
             </div>
 
@@ -84,6 +104,7 @@ const ClientForm = ({ formData, handleClientChange, setFormData }) => {
                     maxLength={62}
                     className="w-full p-3 border rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-nextmux-green"
                     placeholder="123 rue Exemple"
+                    required
                 />
             </div>
         </div>

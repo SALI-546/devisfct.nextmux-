@@ -9,9 +9,9 @@ const AperçuMobile = ({ formData, calculateTotals, handleSaveDevis, handleShare
                 {/* En-tête */}
                 <div className="flex justify-between items-start mb-6">
                     {/* Logo de l'entreprise */}
-                    {formData.logo && (
+                    {formData.logoFile && (
                         <div className="w-24 sm:w-32">
-                            <img src={formData.logo} alt="Logo entreprise" className="w-24 sm:w-28 h-24 object-contain" />
+                            <img src={URL.createObjectURL(formData.logoFile)} alt="Logo entreprise" className="w-24 sm:w-28 h-24 object-contain" />
                         </div>
                     )}
                     {/* Informations du devis */}
@@ -91,9 +91,9 @@ const AperçuMobile = ({ formData, calculateTotals, handleSaveDevis, handleShare
                 <div className="pt-4 flex justify-end">
                     <div className="text-right">
                         <h3 className="font-semibold mb-2">Signature</h3>
-                        {formData.conditions.signature && (
+                        {formData.conditions.signatureFile && (
                             <img
-                                src={formData.conditions.signature}
+                                src={URL.createObjectURL(formData.conditions.signatureFile)}
                                 alt="Signature numérique"
                                 className="mt-2 max-h-24 object-contain border border-gray-300 rounded-md"
                             />
@@ -121,6 +121,7 @@ const AperçuMobile = ({ formData, calculateTotals, handleSaveDevis, handleShare
             </div>
         </div>
     );
+
 };
 
 export default AperçuMobile;

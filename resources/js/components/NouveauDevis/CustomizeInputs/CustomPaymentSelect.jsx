@@ -1,3 +1,5 @@
+// src/components/CustomizeInputs/CustomPaymentSelect.jsx
+
 import React, { useState, useRef, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
 
@@ -5,6 +7,11 @@ const CustomPaymentSelect = ({ value, onChange, options, placeholder }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [selectedValue, setSelectedValue] = useState(value || "");
     const dropdownRef = useRef(null);
+
+    // Synchroniser selectedValue avec la prop value
+    useEffect(() => {
+        setSelectedValue(value || "");
+    }, [value]);
 
     // Gérer la sélection dans la liste
     const handleSelect = (option) => {
@@ -53,8 +60,7 @@ const CustomPaymentSelect = ({ value, onChange, options, placeholder }) => {
                         options.map((option, index) => (
                             <li
                                 key={index}
-                                className={`p-2 hover:bg-nextmux-green hover:text-white cursor-pointer 
-                                    }`}
+                                className={`p-2 hover:bg-nextmux-green hover:text-white cursor-pointer`}
                                 onClick={() => handleSelect(option)}
                             >
                                 {option}

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import Flag from "react-world-flags"; // Module pour les drapeaux
+import { MdArrowBackIos, MdArrowForwardIos } from "react-icons/md";
 
 // Mapping des codes pays (ISO 3166-1 alpha-2)
 const countryFlags = {
@@ -105,6 +106,8 @@ const Projets = () => {
     ]);
 
     const [filters, setFilters] = useState({ category: "", country: "" });
+    const [currentPage, setCurrentPage] = useState(1);
+    const projectsPerPage = 3; // Nombre de projets par page
 
     // Gestion du filtrage des projets
     const handleFilterChange = (field, value) => {
@@ -117,6 +120,17 @@ const Projets = () => {
             (!filters.country || project.country === filters.country)
         );
     });
+
+    // Calculer les projets à afficher pour la page actuelle
+    const indexOfLastProject = currentPage * projectsPerPage;
+    const indexOfFirstProject = indexOfLastProject - projectsPerPage;
+    const currentProjects = filteredProjects.slice(indexOfFirstProject, indexOfLastProject);
+
+    // Changer la page
+    const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+    // Total de pages
+    const totalPages = Math.ceil(filteredProjects.length / projectsPerPage);
 
     return (
         <div className="p-6">
@@ -152,10 +166,10 @@ const Projets = () => {
 
             {/* Liste des projets */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredProjects.map((project) => (
+                {currentProjects.map((project) => (
                     <div
                         key={project.id}
-                        className="border rounded-lg p-4 shadow-sm hover:shadow-md flex flex-col"
+                        className="border rounded-lg p-4 shadow-sm hover:shadow-md flex flex-col bg-gray-50"
                     >
                         <div className="flex justify-between items-center mb-4">
                             <span className="text-gray-500 text-sm">{project.category}</span>
@@ -188,6 +202,27 @@ const Projets = () => {
                     </div>
                 ))}
             </div>
+
+            {/* Pagination */}
+           <div className="flex justify-center mt-6 space-x-3">
+           <button
+    onClick={() => paginate(currentPage - 1)}
+    disabled={currentPage === 1}
+    className="px-6 py-2 border-2 border-nextmux-green text-nextmux-green rounded-full shadow-md transition-all duration-300 ease-in-out hover:bg-nextmux-green hover:text-white disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+>
+    <MdArrowBackIos />
+    Précédent
+</button>
+<button
+    onClick={() => paginate(currentPage + 1)}
+    disabled={currentPage === totalPages}
+    className="px-6 py-2 border-2 border-nextmux-green text-nextmux-green rounded-full shadow-md transition-all duration-300 ease-in-out hover:bg-nextmux-green hover:text-white disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+>
+    <MdArrowForwardIos />
+    Suivant
+</button>
+</div>
+
 
             {/* Message si aucun projet trouvé */}
             {filteredProjects.length === 0 && (
