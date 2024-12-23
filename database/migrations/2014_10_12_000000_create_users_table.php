@@ -13,7 +13,7 @@ class CreateUsersTable extends Migration
             $table->string('nm_id')->unique();
             $table->string('name');
             $table->string('email')->unique();
-            $table->string('password'); // Ajout de la colonne 'password'
+            $table->string('password'); 
             $table->boolean('is_confirmed')->default(false);
             $table->boolean('is_admin')->default(false);
             $table->boolean('is_desabled')->default(false);

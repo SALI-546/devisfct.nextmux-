@@ -15,12 +15,12 @@ class UserSeeder extends Seeder
      */
     public function run()
     {   
-        // Exemple : création d'un utilisateur
+        
         User::create([
             'nm_id' => 'BSWTVVCV',
             'name' => 'Ludwig Sauer',
             'email' => 'dayne33@example.com',
-            'password' => Hash::make('password'), // Hasher le mot de passe
+            'password' => Hash::make('password'), 
             'is_confirmed' => true,
             'is_admin' => true,
             'is_desabled' => false,

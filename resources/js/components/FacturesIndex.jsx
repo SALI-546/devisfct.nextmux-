@@ -1,18 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { File, MoreVertical, Share, Eye, Copy, CheckCircle } from 'lucide-react';
+import { File, MoreVertical, Share as ShareIcon, Eye, Copy, CheckCircle } from 'lucide-react';
+import axios from 'axios';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const FacturesIndex = () => {
     const [activeCard, setActiveCard] = useState(null);
+    const [factures, setFactures] = useState([]);
+    const [searchQuery, setSearchQuery] = useState('');
 
     const actions = [
-        { icon: <Share className="w-4 h-4" />, label: 'Partager' },
-        { icon: <Eye className="w-4 h-4" />, label: 'Visualiser' },
-        { icon: <Copy className="w-4 h-4" />, label: 'Dupliquer' },
-        { icon: <CheckCircle className="w-4 h-4" />, label: 'Valider' },
+        { icon: <ShareIcon className="w-4 h-4" />, label: 'Partager', action: 'share' },
+        { icon: <Eye className="w-4 h-4" />, label: 'Visualiser', action: 'view' },
+        { icon: <Copy className="w-4 h-4" />, label: 'Dupliquer', action: 'duplicate' },
+        { icon: <CheckCircle className="w-4 h-4" />, label: 'Valider', action: 'validate' },
     ];
 
-    const toggleActions = (cardId) => {
-        setActiveCard((prevCard) => (prevCard === cardId ? null : cardId));
+    const toggleActions = (invoiceId) => {
+        setActiveCard((prevCard) => (prevCard === invoiceId ? null : invoiceId));
     };
 
     const closeActionsMenu = () => {
@@ -28,8 +33,105 @@ const FacturesIndex = () => {
         };
     }, []);
 
+    useEffect(() => {
+        fetchFactures();
+    }, [searchQuery]);
+
+    const fetchFactures = async () => {
+        try {
+            const res = await axios.get('/api/invoices', { params: { search: searchQuery }, withCredentials: true });
+            let invoicesData = res.data;
+            if (!Array.isArray(invoicesData)) {
+                invoicesData = [];
+            }
+            setFactures(invoicesData);
+        } catch (error) {
+            console.error("Erreur lors du chargement des factures:", error);
+            toast.error('Impossible de charger les factures.');
+        }
+    };
+
+    const handleActionClick = async (factureId, action) => {
+        closeActionsMenu();
+        const urlBase = window.location.origin;
+        switch (action) {
+            case 'share':
+                try {
+                    const shareUrl = `${urlBase}/facture/${factureId}`;
+                    if (navigator.share) {
+                        await navigator.share({
+                            title: `Facture #${factureId}`,
+                            text: 'Voici votre facture.',
+                            url: shareUrl,
+                        });
+                        toast.success('Facture partagée avec succès !');
+                    } else {
+                        await navigator.clipboard.writeText(shareUrl);
+                        toast.success('Lien copié dans le presse-papiers !');
+                    }
+                } catch (err) {
+                    console.error('Erreur lors du partage:', err);
+                }
+                break;
+            case 'view':
+                window.location.href = `/facture/${factureId}`;
+                break;
+            case 'duplicate':
+                try {
+                    await axios.post(`/api/invoices/${factureId}/duplicate`, {}, { withCredentials: true });
+                    toast.success('Facture dupliquée avec succès !');
+                    fetchFactures();
+                } catch (err) {
+                    console.error('Erreur duplication:', err);
+                    toast.error('Impossible de dupliquer la facture.');
+                }
+                break;
+            case 'validate':
+                try {
+                    await axios.post(`/api/invoices/${factureId}/validate`, {}, { withCredentials: true });
+                    toast.success('Facture validée avec succès !');
+                    fetchFactures();
+                } catch (err) {
+                    console.error('Erreur validation:', err);
+                    toast.error('Impossible de valider la facture.');
+                }
+                break;
+            default:
+                break;
+        }
+    };
+
+    const getStatusClass = (statut) => {
+        // Adapter selon vos statuts réels
+        const st = statut.toLowerCase();
+        if (st.includes('payée') || st.includes('payé')) {
+            return 'bg-green-100 text-green-800';
+        } else if (st.includes('non') || st.includes('impayé')) {
+            return 'bg-red-100 text-yellow-800';
+        } else {
+            return 'bg-gray-100 text-gray-800';
+        }
+    };
+
+    const getStatusLabel = (statut) => {
+        return statut;
+    };
+
+    const getDateLabel = (statut, dateEmission) => {
+        const d = new Date(dateEmission).toLocaleDateString();
+        const st = statut.toLowerCase();
+        if (st.includes('payée') || st.includes('payé')) {
+            return `Payé le ${d}`;
+        } else if (st.includes('non') || st.includes('impayé')) {
+            return `Créé le ${d}`;
+        } else {
+            return `Modifié le ${d}`;
+        }
+    };
+
     return (
         <div>
+            <ToastContainer />
             <div className="container mx-auto px-4 py-8">
                 <h1 className="text-3xl font-bold mb-4 text-gray-800">Générez des factures en un clic</h1>
                 <div className="flex justify-between items-center mb-8">
@@ -38,6 +140,8 @@ const FacturesIndex = () => {
                             type="search"
                             placeholder="Rechercher une facture..."
                             className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-nextmux-green"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
                         />
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -82,82 +186,74 @@ const FacturesIndex = () => {
                         </div>
                     </a>
 
-                    {/* Cartes de factures */}
-                    {[1, 2, 3].map((card) => (
-                        <div
-                            key={card}
-                            className="relative card bg-white rounded-xl overflow-hidden border border-gray-200 hover:border-nextmux-green"
-                        >
-                            {/* Header de la carte */}
-                            <div className="h-40 bg-gradient-to-br from-gray-200 via-blue-100 to-gray-300 flex items-center justify-center relative overflow-hidden">
-                                <File className="w-14 h-14 sm:w-20 sm:h-20 text-blue-600 stroke-2 z-10" />
-                            </div>
+                    {factures.map((facture) => {
+                        const total = facture.items.reduce((sum, i) => sum + (i.quantite * i.prix), 0);
+                        const statusClass = getStatusClass(facture.statut);
+                        const statusLabel = getStatusLabel(facture.statut);
+                        const dateLabel = getDateLabel(facture.statut, facture.date_emission);
 
-                            {/* Contenu de la carte */}
-                            <a
-                                href={`/factures/${card}`}
-                                className="block p-6"
-                                onClick={(e) => {
-                                    if (activeCard === card) e.preventDefault(); // Empêche l'ouverture du lien si le menu est actif
-                                }}
+                        return (
+                            <div
+                                key={facture.id}
+                                className="relative card bg-white rounded-xl overflow-hidden border border-gray-200 hover:border-nextmux-green"
                             >
-                                <div
-                                    className={`status-badge inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${card === 1
-                                        ? 'bg-red-100 text-yellow-800'
-                                        : card === 2
-                                            ? 'bg-green-100 text-green-800'
-                                            : 'bg-gray-100 text-gray-800'
-                                        } mb-4`}
-                                >
-                                    {card === 1 ? 'Non payé' : card === 2 ? 'Payé' : 'Brouillon'}
+                                <div className="h-40 bg-gradient-to-br from-gray-200 via-blue-100 to-gray-300 flex items-center justify-center relative overflow-hidden">
+                                    <File className="w-14 h-14 sm:w-20 sm:h-20 text-blue-600 stroke-2 z-10" />
                                 </div>
-                                <h3 className="text-xl font-semibold text-gray-800 mb-2">Facture #{2024 + card}</h3>
-                                <div className="flex items-center text-sm text-gray-500">
-                                    <span>Client: Entreprise {card}</span>
-                                    <span className="mx-2">•</span>
-                                    <span>{card === 1 ? '3 500 XOF' : card === 2 ? '2 800 XOF' : '1 200 XOF'}</span>
-                                </div>
-                                <div className="mt-4 text-sm text-gray-500">
-                                    {card === 1
-                                        ? 'Créé le 15-03-2024'
-                                        : card === 2
-                                            ? 'Payé le 14-03-2024'
-                                            : 'Modifié le 16-03-2024'}
-                                </div>
-                            </a>
 
-                            {/* Bouton des trois points */}
-                            <div className="absolute top-4 right-4">
-                                <button
-                                    className="p-2 bg-white rounded-full shadow hover:bg-gray-100 focus:outline-none"
+                                <a
+                                    href={`/facture/${facture.id}`}
+                                    className="block p-6"
                                     onClick={(e) => {
-                                        e.stopPropagation();
-                                        toggleActions(card);
+                                        if (activeCard === facture.id) e.preventDefault();
                                     }}
                                 >
-                                    <MoreVertical className="w-5 h-5 text-gray-600" />
-                                </button>
-
-                                {/* Menu des actions rapides */}
-                                {activeCard === card && (
-                                    <div
-                                        className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg p-2 z-10"
-                                        onClick={(e) => e.stopPropagation()}
-                                    >
-                                        {actions.map((action, index) => (
-                                            <button
-                                                key={index}
-                                                className="w-full flex items-center px-3 py-2 hover:bg-gray-100 rounded-md"
-                                            >
-                                                {action.icon}
-                                                <span className="ml-2 text-sm text-gray-800">{action.label}</span>
-                                            </button>
-                                        ))}
+                                    <div className={`status-badge inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${statusClass} mb-4`}>
+                                        {statusLabel}
                                     </div>
-                                )}
+                                    <h3 className="text-xl font-semibold text-gray-800 mb-2">Facture #{facture.numero}</h3>
+                                    <div className="flex items-center text-sm text-gray-500">
+                                        <span>Client: {facture.client ? facture.client.entreprise : 'N/A'}</span>
+                                        <span className="mx-2">•</span>
+                                        <span>{total.toFixed(2)} XOF</span>
+                                    </div>
+                                    <div className="mt-4 text-sm text-gray-500">
+                                        {dateLabel}
+                                    </div>
+                                </a>
+
+                                <div className="absolute top-4 right-4">
+                                    <button
+                                        className="p-2 bg-white rounded-full shadow hover:bg-gray-100 focus:outline-none"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            toggleActions(facture.id);
+                                        }}
+                                    >
+                                        <MoreVertical className="w-5 h-5 text-gray-600" />
+                                    </button>
+
+                                    {activeCard === facture.id && (
+                                        <div
+                                            className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg p-2 z-10"
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            {actions.map((action, index) => (
+                                                <button
+                                                    key={index}
+                                                    className="w-full flex items-center px-3 py-2 hover:bg-gray-100 rounded-md"
+                                                    onClick={() => handleActionClick(facture.id, action.action)}
+                                                >
+                                                    {action.icon}
+                                                    <span className="ml-2 text-sm text-gray-800">{action.label}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             </div>
         </div>

@@ -10,7 +10,7 @@ class CreateProductsTable extends Migration
     {
         Schema::create('products', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->unique(); // Noms de produits uniques
+            $table->string('name')->unique(); 
             $table->integer('default_quantity')->default(1);
             $table->decimal('unit_price', 15, 2);
             $table->integer('tva')->default(0);

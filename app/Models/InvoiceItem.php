@@ -5,13 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Item extends Model
+class InvoiceItem extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'quote_id',
+        'invoice_id',
         'product_id',
+        'description',
         'quantite',
         'prix',
         'tva',
@@ -24,15 +25,15 @@ class Item extends Model
     ];
 
     /**
-     * Un item appartient à un devis.
+     * Un item appartient à une facture.
      */
-    public function quote()
+    public function invoice()
     {
-        return $this->belongsTo(Quote::class);
+        return $this->belongsTo(Invoice::class);
     }
 
     /**
-     * Un item appartient à un produit.
+     * Un item peut être lié à un produit (facultatif).
      */
     public function product()
     {

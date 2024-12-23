@@ -15,7 +15,7 @@ class Client extends Model
         'email',
         'telephone',
         'adresse',
-        'user_id', // Nouveau champ ajouté
+        'user_id',
     ];
 
     /**
@@ -32,5 +32,14 @@ class Client extends Model
     public function quotes()
     {
         return $this->hasMany(Quote::class);
+    }
+
+
+    /**
+     * Un client peut avoir plusieurs factures.
+     */
+    public function invoices()
+    {
+        return $this->hasMany(Invoice::class);
     }
 }

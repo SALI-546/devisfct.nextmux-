@@ -32,7 +32,7 @@ return new class extends Migration
             $table->json('skills');
             $table->text('requirements');
             $table->boolean('can_be_local')->default(1);
-            $table->foreignId('user_id')->nullable()->constrained(); // Assurez-vous de lier à une autre table utilisateur si nécessaire
+            $table->foreignId('user_id')->nullable()->constrained(); 
             $table->enum('status', ['pending', 'approved', 'rejected', 'taken', 'finished', 'in_progress', 'on_hold', 'cancelled', 'archived', 'under_review'])->default('pending');
             $table->timestamps();
         });

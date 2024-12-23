@@ -7,7 +7,7 @@ const CustomProductSelect = ({
     index,
     item,
     onItemChange,
-    products, // Liste des produits avec leurs quantités, prix et TVA
+    products, // Liste des produits avec leurs prix et TVA
 }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [selectedProductId, setSelectedProductId] = useState(item.product_id || ""); // product_id
@@ -20,9 +20,8 @@ const CustomProductSelect = ({
     const handleSelect = (product) => {
         setSelectedProductId(product.id);
         onItemChange(index, "product_id", product.id); // Met à jour product_id
-        onItemChange(index, "prix", product.unitPrice); // Met à jour prix
-        onItemChange(index, "tva", product.tva); // Met à jour tva
-        onItemChange(index, "quantite", product.defaultQuantity); // Met à jour quantite
+        onItemChange(index, "prix", product.price_with_content); // Met à jour prix
+        // 'tva' est géré par le backend, pas besoin de le mettre ici
         setIsDropdownOpen(false); // Ferme la liste déroulante
     };
 
@@ -75,7 +74,7 @@ const CustomProductSelect = ({
                                 className="p-2 hover:bg-nextmux-green hover:text-white cursor-pointer"
                                 onClick={() => handleSelect(product)}
                             >
-                                {product.name}
+                                {product.name} - {product.price_with_content.toLocaleString()} XOF
                             </li>
                         ))
                     ) : (

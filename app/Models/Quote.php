@@ -11,6 +11,7 @@ class Quote extends Model
 
     protected $fillable = [
         'client_id',
+        'emetteur_id',
         'numero',
         'date_emission',
         'logo_path',
@@ -29,6 +30,15 @@ class Quote extends Model
         return $this->belongsTo(Client::class);
     }
 
+     /**
+     * Un devis appartient à un émetteur.
+     */
+    public function emetteur()
+    {
+        return $this->belongsTo(Emetteur::class);
+    }
+
+
     /**
      * Un devis peut avoir plusieurs items.
      */
@@ -37,19 +47,10 @@ class Quote extends Model
         return $this->hasMany(Item::class);
     }
 
-    /**
-     * (Optionnel) Un devis utilise un mode de paiement.
-     */
-    // public function paymentMethod()
-    // {
-    //     return $this->belongsTo(PaymentMethod::class, 'paiement', 'name');
-    // }
+    public function invoice()
+    {
+        return $this->hasOne(Invoice::class);
+    }
 
-    /**
-     * (Optionnel) Un devis a un statut.
-     */
-    // public function status()
-    // {
-    //     return $this->belongsTo(Status::class);
-    // }
+    
 }

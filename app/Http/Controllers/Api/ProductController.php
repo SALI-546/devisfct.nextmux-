@@ -9,13 +9,15 @@ use App\Models\Product;
 class ProductController extends Controller
 {
     /**
-     * Récupère tous les produits.
+ 
      *
      * @return \Illuminate\Http\JsonResponse
      */
     public function index()
     {
-        $products = Product::all();
-        return response()->json($products, 200);
+      
+        $packs = Product::with('features')->whereNull('parent_id')->get();
+
+        return response()->json($packs, 200);
     }
 }

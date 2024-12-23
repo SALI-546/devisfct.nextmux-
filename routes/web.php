@@ -47,6 +47,23 @@ Route::get('/devis/{id}', function ($id) {
     return view('devis.view');
 })->where('id', '[0-9]+'); // Assurez-vous que l'ID est numérique ou ajustez le regex selon vos besoins
 
+// Route pour visualiser une facture
+Route::get('/facture/{id}', function ($id) {
+    return view('factures.view', ['invoiceId' => $id]);
+})->where('id', '[0-9]+');
+
+
+
+// web.php
+Route::get('/facture/{id}/edit', function($id) {
+    return view('factures.edit', ['invoiceId' => $id]);
+})->name('invoices.edit')->where('id', '[0-9]+');
+
+
+// Fallback route - toute route non définie ci-dessus renvoie l'app React
+Route::get('/{any}', function () {
+    return view('app'); // Vue qui contient <div id="root"></div> par exemple
+})->where('any', '.*');
 
 
 

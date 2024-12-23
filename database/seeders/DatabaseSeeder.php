@@ -12,13 +12,13 @@ class DatabaseSeeder extends Seeder
      */
     public function run()
     {
-        // Appeler le seeder des utilisateurs et des clients
+       
         $this->call([
             UserSeeder::class,
             ClientSeeder::class,
             ProductSeeder::class,
             DefaultUserSeeder::class,
-            // Ajoutez d'autres seeders ici si nécessaire
+          
         ]);
     }
 }

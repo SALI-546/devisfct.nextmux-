@@ -14,19 +14,12 @@ class CreatePaymentMethodsTable extends Migration
             $table->timestamps();
         });
 
-        // Optionnel : Ajouter une clé étrangère dans la table quotes si vous souhaitez référencer payment_methods
-        // Schema::table('quotes', function (Blueprint $table) {
-        //     $table->foreignId('payment_method_id')->nullable()->constrained('payment_methods')->onDelete('set null');
-        // });
+        
     }
 
     public function down()
     {
-        // Optionnel : Supprimer la clé étrangère dans la table quotes si ajoutée
-        // Schema::table('quotes', function (Blueprint $table) {
-        //     $table->dropForeign(['payment_method_id']);
-        //     $table->dropColumn('payment_method_id');
-        // });
+       
 
         Schema::dropIfExists('payment_methods');
     }

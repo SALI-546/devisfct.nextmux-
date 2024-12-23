@@ -1,6 +1,6 @@
 // resources/js/components/DevisEditor.jsx
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Download, Save, Share } from 'lucide-react';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -16,28 +16,39 @@ import { jsPDF } from "jspdf";
 
 const DevisEditor = () => {
     const [activeSection, setActiveSection] = useState('general');
+    const [packs, setPacks] = useState([]);
     const [formData, setFormData] = useState({
         numero: `DEV-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
         date_emission: new Date().toISOString().split('T')[0],
         include_tva: false,
+        emetteur: { // Ajout de l'émetteur
+            nom: "",
+            adresse: "",
+            email: "",
+            telephone: "",
+        },
         client: {
             entreprise: "",
-            nom: "",
+            // Suppression de 'nom' dans formData
             email: "",
             telephone: "",
             adresse: "",
-            // Supprimer 'user_id'
         },
         items: [
             {
+                pack_id: '',
                 product_id: '',
                 quantite: 1,
                 prix: 0,
-                tva: 20,
+                tva: 0,
+                is_new_product: false,
+                new_product_name: '',
+                new_product_description: '',
+                new_product_price: 0,
             },
         ],
         conditions: {
-            paiement: "", // Initialiser à une chaîne vide
+            paiement: "",
             commentaires: "",
             signature: null,
         },
@@ -46,7 +57,26 @@ const DevisEditor = () => {
     const [quoteId, setQuoteId] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
 
-    // Gestion des changements pour la signature
+    // Récupération des packs
+    useEffect(() => {
+        const fetchPacks = async () => {
+            try {
+                const response = await axios.get('/api/products', { withCredentials: true });
+                setPacks(response.data);
+            } catch (error) {
+                console.error('Erreur lors de la récupération des packs:', error);
+                toast.error('Erreur lors de la récupération des packs.', {
+                    icon: '⚠️',
+                    position: "bottom-left",
+                    autoClose: 3000,
+                    hideProgressBar: true,
+                    closeOnClick: true,
+                });
+            }
+        };
+        fetchPacks();
+    }, []);
+
     const handleSignatureChange = (file) => {
         setFormData(prev => ({
             ...prev,
@@ -57,9 +87,7 @@ const DevisEditor = () => {
         }));
     };
 
-    // Fonction dédiée pour mettre à jour les conditions
     const handleConditionsChange = (field, value) => {
-        console.log(`Updating conditions.${field} to:`, value); // Débogage
         setFormData(prev => ({
             ...prev,
             conditions: {
@@ -69,12 +97,17 @@ const DevisEditor = () => {
         }));
     };
 
-    // Gestion des changements généraux
     const handleInputChange = (field, value) => {
         setFormData(prev => ({ ...prev, [field]: value }));
     };
 
-    // Gestion des changements spécifiques au client
+    const handleEmetteurChange = (field, value) => {
+        setFormData(prev => ({
+            ...prev,
+            emetteur: { ...prev.emetteur, [field]: value },
+        }));
+    };
+
     const handleClientChange = (field, value) => {
         setFormData(prev => ({
             ...prev,
@@ -82,7 +115,6 @@ const DevisEditor = () => {
         }));
     };
 
-    // Gestion des changements des articles
     const handleItemChange = (index, field, value) => {
         setFormData(prev => {
             const newItems = [...prev.items];
@@ -91,23 +123,26 @@ const DevisEditor = () => {
         });
     };
 
-    // Ajouter un nouvel article
     const addItem = () => {
         setFormData(prev => ({
             ...prev,
             items: [
                 ...prev.items,
                 {
+                    pack_id: '',
                     product_id: '',
                     quantite: 1,
                     prix: 0,
-                    tva: 20,
+                    tva: 0,
+                    is_new_product: false,
+                    new_product_name: '',
+                    new_product_description: '',
+                    new_product_price: 0,
                 },
             ],
         }));
     };
 
-    // Supprimer un article existant
     const removeItem = (index) => {
         setFormData(prev => ({
             ...prev,
@@ -115,14 +150,29 @@ const DevisEditor = () => {
         }));
     };
 
-    // Calcul des totaux
+    const handleAddNewProduct = (packId, newProduct) => {
+        setPacks(prevPacks => {
+            return prevPacks.map(p => {
+                if (p.id === packId) {
+                    return {
+                        ...p,
+                        features: [...p.features, newProduct],
+                    };
+                }
+                return p;
+            });
+        });
+    };
+
     const calculateTotals = () => {
         const totalHT = formData.items.reduce((sum, item) =>
             sum + (item.quantite * item.prix), 0);
         let totalTVA = 0;
         if (formData.include_tva) {
-            totalTVA = formData.items.reduce((sum, item) =>
-                sum + (item.quantite * item.prix * (item.tva / 100)), 0);
+            formData.items.forEach(item => {
+                const tvaRate = item.tva || 0;
+                totalTVA += item.quantite * item.prix * (tvaRate / 100);
+            });
         }
         return {
             totalHT,
@@ -131,17 +181,14 @@ const DevisEditor = () => {
         };
     };
 
-    // Fonction pour générer le PDF
     const handleDownloadPDF = async () => {
         const previewElement = document.querySelector('.preview-container');
-
         if (!previewElement) {
             toast.error('Élément de prévisualisation non trouvé');
             return;
         }
 
         try {
-            // Capture de l'élément en haute résolution
             const canvas = await html2canvas(previewElement, {
                 scale: 3,
                 useCORS: true,
@@ -151,7 +198,6 @@ const DevisEditor = () => {
             });
 
             const imgData = canvas.toDataURL('image/png');
-
             const pdf = new jsPDF({
                 orientation: canvas.width > canvas.height ? 'l' : 'p',
                 unit: 'px',
@@ -159,9 +205,7 @@ const DevisEditor = () => {
             });
 
             pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height, '', 'FAST');
-
             pdf.save(`devis_${formData.numero}.pdf`);
-
         } catch (error) {
             console.error('Erreur lors de la génération du PDF :', error);
             toast.error('Impossible de générer le PDF', {
@@ -173,24 +217,36 @@ const DevisEditor = () => {
         }
     };
 
-    /**
-     * Fonction pour sauvegarder le devis via l'API.
-     */
     const handleSaveDevis = async () => {
         setIsLoading(true);
         try {
-            // Valider que tous les champs requis sont remplis
-            if (
-                !formData.numero ||
-                !formData.date_emission ||
-                formData.include_tva === null ||
-                !formData.client.entreprise ||
-                !formData.client.nom ||
-                !formData.client.email ||
-                !formData.client.telephone ||
-                !formData.client.adresse ||
-                !formData.conditions.paiement // S'assurer que 'paiement' est rempli
-            ) {
+            // Validation Côté Client
+            const requiredFields = [
+                'numero',
+                'date_emission',
+                'include_tva',
+                'emetteur.nom',
+                'emetteur.adresse',
+                'emetteur.email',
+                'emetteur.telephone',
+                'client.entreprise',
+                // Suppression de 'client.nom' de la validation
+                'client.email',
+                'client.telephone',
+                'client.adresse',
+                'conditions.paiement'
+            ];
+
+            const isValid = requiredFields.every(field => {
+                const keys = field.split('.');
+                let value = formData;
+                keys.forEach(key => {
+                    value = value[key];
+                });
+                return value !== undefined && value !== null && value !== '';
+            });
+
+            if (!isValid) {
                 toast.error('Veuillez remplir tous les champs requis.', {
                     icon: '⚠️',
                     position: "bottom-left",
@@ -202,10 +258,9 @@ const DevisEditor = () => {
                 return;
             }
 
-            // Vérifiez si l'email est valide
             const emailRegex = /\S+@\S+\.\S+/;
             if (!emailRegex.test(formData.client.email)) {
-                toast.error('Veuillez entrer une adresse email valide.', {
+                toast.error('Veuillez entrer une adresse email valide pour le client.', {
                     icon: '⚠️',
                     position: "bottom-left",
                     autoClose: 3000,
@@ -216,41 +271,55 @@ const DevisEditor = () => {
                 return;
             }
 
-            // **Débogage : Afficher les données avant l'envoi**
+            if (!emailRegex.test(formData.emetteur.email)) {
+                toast.error('Veuillez entrer une adresse email valide pour l\'émetteur.', {
+                    icon: '⚠️',
+                    position: "bottom-left",
+                    autoClose: 3000,
+                    hideProgressBar: true,
+                    closeOnClick: true,
+                });
+                setIsLoading(false);
+                return;
+            }
+
             console.log("FormData avant envoi:", formData);
 
-            // **Étape 1 : Créer le devis avec les conditions**
             const formDataToSend = new FormData();
             formDataToSend.append('numero', formData.numero);
             formDataToSend.append('date_emission', formData.date_emission);
             formDataToSend.append('include_tva', formData.include_tva ? '1' : '0');
-            // Append client data
+
+            // Émetteur
+            formDataToSend.append('emetteur[nom]', formData.emetteur.nom);
+            formDataToSend.append('emetteur[adresse]', formData.emetteur.adresse);
+            formDataToSend.append('emetteur[email]', formData.emetteur.email);
+            formDataToSend.append('emetteur[telephone]', formData.emetteur.telephone);
+
+            // Client
             formDataToSend.append('client[entreprise]', formData.client.entreprise);
-            formDataToSend.append('client[nom]', formData.client.nom);
+            // Suppression de 'client.nom'
             formDataToSend.append('client[email]', formData.client.email);
             formDataToSend.append('client[telephone]', formData.client.telephone);
             formDataToSend.append('client[adresse]', formData.client.adresse);
-            // Ne plus envoyer 'client[user_id]'
-            // Append logo if exists
+
             if (formData.logo) {
                 formDataToSend.append('logo', formData.logo);
             }
-            // Append conditions
+
             formDataToSend.append('paiement', formData.conditions.paiement);
             formDataToSend.append('commentaires', formData.conditions.commentaires);
             if (formData.conditions.signature) {
                 formDataToSend.append('signature', formData.conditions.signature);
             }
 
-            // **Débogage : Afficher les données envoyées pour la création du devis avec conditions**
-            console.log("Envoi des données de création du devis avec conditions:");
+            console.log("Envoi des données de création du devis avec conditions et émetteur:");
             for (let pair of formDataToSend.entries()) {
                 console.log(`${pair[0]}: ${pair[1]}`);
             }
 
-            // Créer le devis via l'API
+            // Création du devis
             const quoteResponse = await axios.post('/api/quotes', formDataToSend, {
-                // Assurez-vous que les cookies sont envoyés si vous utilisez l'authentification de session
                 withCredentials: true,
             });
 
@@ -258,24 +327,39 @@ const DevisEditor = () => {
             const createdQuoteId = quoteResponse.data.id;
             setQuoteId(createdQuoteId);
 
-            // **Étape 2 : Mettre à jour les articles**
             if (formData.items.length > 0) {
-                // Log les données des articles
-                console.log("Envoi des données des articles:", formData.items);
+                // Inclure les informations du nouveau produit si is_new_product est true
+                const itemsToSend = formData.items.map(item => {
+                    const newItem = {
+                        product_id: item.product_id,
+                        quantite: item.quantite,
+                        tva: item.tva || 0,
+                        prix: item.prix
+                    };
+                    // Si c'est un nouveau produit
+                    if (item.is_new_product) {
+                        newItem.is_new_product = true;
+                        newItem.new_product_name = item.new_product_name;
+                        newItem.new_product_description = item.new_product_description || '';
+                        newItem.new_product_price = item.new_product_price;
+                        newItem.pack_id = item.pack_id; 
+                    }
+                    return newItem;
+                });
 
-                const itemsResponse = await axios.patch(`/api/quotes/${createdQuoteId}/items`, { items: formData.items }, {
+                console.log("Envoi des données des articles:", itemsToSend);
+
+                const itemsResponse = await axios.patch(`/api/quotes/${createdQuoteId}/items`, { items: itemsToSend }, {
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    withCredentials: true, // Si nécessaire
+                    withCredentials: true,
                 });
 
-                // Log la réponse des articles
                 console.log("Réponse des articles:", itemsResponse.data);
             }
 
-            // **Redirection vers la visualisation du devis**
-            window.location.href = `/devis/${createdQuoteId}`; // Redirection après la soumission
+            window.location.href = `/devis/${createdQuoteId}`;
 
             toast.success('Le devis a été enregistré avec succès !', {
                 icon: '🎉',
@@ -370,6 +454,7 @@ const DevisEditor = () => {
                     <ClientForm
                         formData={formData}
                         handleClientChange={handleClientChange}
+                        handleEmetteurChange={handleEmetteurChange} // Passer handleEmetteurChange
                         setFormData={setFormData}
                     />
                 );
@@ -381,13 +466,15 @@ const DevisEditor = () => {
                         addItem={addItem}
                         removeItem={removeItem}
                         setFormData={setFormData}
+                        packs={packs}
+                        onAddNewProduct={handleAddNewProduct}
                     />
                 );
             case 'conditions':
                 return (
                     <ConditionsForm
                         formData={formData}
-                        handleInputChange={handleConditionsChange} // Utiliser la fonction dédiée
+                        handleInputChange={handleConditionsChange}
                         handleSignatureChange={handleSignatureChange}
                     />
                 );
@@ -405,23 +492,32 @@ const DevisEditor = () => {
         }
     };
 
+    const getProductDetails = (productId, packs) => {
+        for (let pack of packs) {
+            const feature = pack.features.find(f => f.id === productId);
+            if (feature) {
+                return feature;
+            }
+        }
+        return null;
+    };
+
+    const totals = calculateTotals();
+
     return (
         <div className="flex h-screen">
-            {/* Sidebar */}
             <Sidebar
                 activeSection={activeSection}
                 setActiveSection={setActiveSection}
             />
 
-            {/* Contenu principal */}
             <div className="flex flex-1 flex-col md:flex-row">
-                {/* Formulaire */}
                 <div className="w-full md:w-1/3 p-6 bg-gray-50 overflow-y-auto">
                     <h2 className="text-xl font-semibold mb-4 text-gray-800">
                         {
                             {
                                 'general': 'Informations générales',
-                                'client': 'Détails du client',
+                                'client': 'Détails du client et Émetteur',
                                 'articles': 'Gestion des articles',
                                 'conditions': 'Conditions du devis',
                                 'Aperçu': 'Aperçu'
@@ -431,18 +527,14 @@ const DevisEditor = () => {
                     {renderFormSection()}
                 </div>
 
-                {/* Prévisualisation - visible uniquement sur desktop */}
                 <div className="hidden md:block w-full md:w-2/3 bg-white p-8 overflow-y-auto shadow-inner">
                     <div className="max-w-4xl mx-auto bg-white p-8 border rounded-lg preview-container">
-                        {/* En-tête */}
                         <div className="flex justify-between items-start mb-8">
-                            {/* Logo de l'entreprise (facultatif) */}
                             {formData.logo && (
                                 <div className="w-48">
                                     <img src={URL.createObjectURL(formData.logo)} alt="Logo entreprise" className="max-w-28 h-28 object-contain" />
                                 </div>
                             )}
-                            {/* Informations du devis */}
                             <div className="text-right flex-1">
                                 <h1 className="text-2xl font-bold text-gray-800">DEVIS</h1>
                                 <p className="text-gray-600">N° {formData.numero}</p>
@@ -450,19 +542,29 @@ const DevisEditor = () => {
                             </div>
                         </div>
 
-                        {/* Informations client */}
+                        {/* Émetteur */}
+                        <div className="mb-8">
+                            <h2 className="font-semibold mb-2 border-b pb-2">ÉMETTEUR</h2>
+                            <div className="pt-2">
+                                <p className="font-bold">{formData.emetteur.nom || 'Nom de l\'émetteur ou de l\'entreprise'}</p>
+                                <p>{formData.emetteur.adresse}</p>
+                                <p>{formData.emetteur.email}</p>
+                                <p>{formData.emetteur.telephone}</p>
+                            </div>
+                        </div>
+
+                        {/* Client */}
                         <div className="mb-8">
                             <h2 className="font-semibold mb-2 border-b pb-2">CLIENT</h2>
                             <div className="pt-2">
                                 <p className="font-bold">{formData.client.entreprise || 'Entreprise non renseignée'}</p>
-                                <p>{formData.client.nom}</p>
+                                {/* Suppression de l'affichage de 'client.nom' */}
                                 <p>{formData.client.adresse}</p>
                                 <p>{formData.client.email}</p>
                                 <p>{formData.client.telephone}</p>
                             </div>
                         </div>
 
-                        {/* Articles */}
                         <table className="w-full mb-8">
                             <thead className="bg-gray-50">
                                 <tr className="border-b">
@@ -474,41 +576,49 @@ const DevisEditor = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {formData.items.map((item, index) => (
-                                    <tr key={index} className="border-b">
-                                        <td className="p-2">{getProductName(item.product_id) || ""}</td>
-                                        <td className="text-right p-2">{item.quantite}</td>
-                                        <td className="text-right p-2">{item.prix.toFixed(2)} XOF</td>
-                                        {formData.include_tva && <td className="text-right p-2">{item.tva}%</td>}
-                                        <td className="text-right p-2">
-                                            {(item.quantite * item.prix).toFixed(2)} XOF
-                                        </td>
-                                    </tr>
-                                ))}
+                                {formData.items.map((item, index) => {
+                                    const productDetails = getProductDetails(item.product_id, packs);
+                                    return (
+                                        <tr key={index} className="border-b">
+                                            <td className="p-2">
+                                                {productDetails ? (
+                                                    <>
+                                                        <div className="font-semibold">{productDetails.name}</div>
+                                                        <div className="text-sm text-gray-500">{productDetails.description}</div>
+                                                    </>
+                                                ) : ''}
+                                            </td>
+                                            <td className="text-right p-2">{item.quantite}</td>
+                                            <td className="text-right p-2">{item.prix.toFixed(2)} XOF</td>
+                                            {formData.include_tva && <td className="text-right p-2">{item.tva || 0}%</td>}
+                                            <td className="text-right p-2">
+                                                {(item.quantite * item.prix).toFixed(2)} XOF
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
 
-                        {/* Totaux */}
                         <div className="flex justify-end mb-8">
                             <div className="w-64">
                                 <div className="flex justify-between border-b py-2">
                                     <span>Total HT</span>
-                                    <span>{calculateTotals().totalHT.toFixed(2)} XOF</span>
+                                    <span>{totals.totalHT.toFixed(2)} XOF</span>
                                 </div>
                                 {formData.include_tva && (
                                     <div className="flex justify-between border-b py-2">
                                         <span>TVA</span>
-                                        <span>{calculateTotals().totalTVA.toFixed(2)} XOF</span>
+                                        <span>{totals.totalTVA.toFixed(2)} XOF</span>
                                     </div>
                                 )}
                                 <div className="flex justify-between font-bold py-2">
                                     <span>Total TTC</span>
-                                    <span>{calculateTotals().totalTTC.toFixed(2)} XOF</span>
+                                    <span>{totals.totalTTC.toFixed(2)} XOF</span>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Conditions */}
                         <div className="border-t pt-4">
                             <h3 className="font-semibold mb-2">Conditions de paiement</h3>
                             <p>Mode de paiement : {formData.conditions.paiement}</p>
@@ -530,7 +640,6 @@ const DevisEditor = () => {
                         </div>
                     </div>
 
-                    {/* Boutons d'action */}
                     <ToastContainer />
                     <div className="flex justify-end space-x-2 mt-2">
                         <button
@@ -561,19 +670,9 @@ const DevisEditor = () => {
                         </button>
                     </div>
                 </div>
+                </div>
             </div>
-        </div>
         );
-    };
-    
-    // Helper function to get product name by id
-    const getProductName = (productId) => {
-        const product = [
-            { id: 1, name: "Pack Site Vitrine" },
-            { id: 2, name: "Pack Site Institutionnel" },
-            { id: 3, name: "Pack Site E-commerce" },
-        ].find(p => p.id === productId);
-        return product ? product.name : '';
     };
 
     export default DevisEditor;

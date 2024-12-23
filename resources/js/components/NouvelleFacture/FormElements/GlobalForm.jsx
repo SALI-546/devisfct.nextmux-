@@ -1,30 +1,14 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Info } from 'lucide-react';
 import CustomDatePicker from '../CustomizeInputs/CustomDatePicker';
 
-const GlobalForm = ({ formData, handleInputChange, setFormData }) => {
-    const [logo, setLogo] = useState(formData.logo || null);
-
-    // Fonction pour gérer le changement du logo
-    const handleLogoChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setLogo(reader.result); // Met à jour l'état du logo
-                setFormData((prevState) => ({
-                    ...prevState,
-                    logo: reader.result,  // Sauvegarde le logo dans formData
-                }));
-            };
-            reader.readAsDataURL(file);
-        }
-    };
+const GlobalForm = ({ formData, handleInputChange, setFormData, handleLogoChange }) => {
 
     const handleDrop = (e) => {
         e.preventDefault();
         const file = e.dataTransfer.files[0];
         if (file) {
+            // Appeler handleLogoChange directement
             handleLogoChange({ target: { files: [file] } });
         }
     };
@@ -33,12 +17,11 @@ const GlobalForm = ({ formData, handleInputChange, setFormData }) => {
         e.preventDefault();
     };
 
-    // Gérer la case à cocher pour la TVA
     const handleCheckboxChange = (e) => {
-        setFormData({
-            ...formData,
+        setFormData(prev => ({
+            ...prev,
             includeTva: e.target.checked,
-        });
+        }));
     };
 
     return (
@@ -62,7 +45,7 @@ const GlobalForm = ({ formData, handleInputChange, setFormData }) => {
                     type="text"
                     value={formData.numero}
                     onChange={(e) => {
-                        const value = e.target.value.replace(/\D/g, ""); // Supprime tout sauf les chiffres
+                        const value = e.target.value.replace(/\D/g, "");
                         handleInputChange("numero", value);
                     }}
                     maxLength={45}
@@ -90,12 +73,12 @@ const GlobalForm = ({ formData, handleInputChange, setFormData }) => {
                     <input
                         type="file"
                         accept="image/*"
-                        onChange={handleLogoChange}
+                        onChange={handleLogoChange} // On appelle directement handleLogoChange
                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                     />
-                    {logo ? (
+                    {formData.logo ? (
                         <div className="flex flex-col items-center">
-                            <img src={logo} alt="Logo entreprise" className="h-24 mb-2 object-contain" />
+                            <img src={formData.logo} alt="Logo entreprise" className="h-24 mb-2 object-contain" />
                             <p className="text-sm text-gray-500">Cliquez ou glissez-déposez pour modifier.</p>
                         </div>
                     ) : (

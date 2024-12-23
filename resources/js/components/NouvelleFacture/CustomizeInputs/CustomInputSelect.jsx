@@ -4,43 +4,39 @@ import { ChevronDown } from "lucide-react";
 const CustomInputSelect = ({ value, onChange, options, placeholder }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [inputValue, setInputValue] = useState(value || "");
-    const dropdownRef = useRef(null); 
+    const dropdownRef = useRef(null);
 
-    // Gérer la sélection d'une option
     const handleSelect = (option) => {
         setInputValue(option);
         onChange(option);
-        setIsDropdownOpen(false); 
+        setIsDropdownOpen(false);
     };
 
-    // Gérer le changement dans le champ d'entrée
     const handleInputChange = (e) => {
         const val = e.target.value;
         setInputValue(val);
-        onChange(val); 
-        setIsDropdownOpen(false); 
+        onChange(val);
+        setIsDropdownOpen(false);
     };
 
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-                setIsDropdownOpen(false); 
+                setIsDropdownOpen(false);
             }
         };
-
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
     return (
         <div className="relative" ref={dropdownRef}>
-            {/* Input text avec bouton dropdown */}
             <div className="flex items-center border rounded shadow-sm focus-within:ring-2 focus-within:ring-nextmux-green">
                 <input
                     type="text"
                     value={inputValue}
                     onChange={handleInputChange}
-                    onFocus={() => setIsDropdownOpen(true)} 
+                    onFocus={() => setIsDropdownOpen(true)}
                     placeholder={placeholder || "Entrez une valeur"}
                     className="w-full p-3 pr-10 focus:outline-none"
                 />
@@ -53,7 +49,6 @@ const CustomInputSelect = ({ value, onChange, options, placeholder }) => {
                 </button>
             </div>
 
-            {/* Liste déroulante */}
             {isDropdownOpen && (
                 <ul className="absolute z-10 mt-2 bg-white border rounded-lg shadow-lg w-full max-h-40 overflow-y-auto">
                     {options.length > 0 ? (

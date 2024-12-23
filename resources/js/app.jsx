@@ -8,7 +8,8 @@ import NouveauDevis from './components/NouveauDevis/New';
 import FacturesIndex from './components/FacturesIndex';
 import NouvelleFacture from './components/NouvelleFacture/New';
 import Projets from './components/Projets';
-import DevisView from './components/DevisView'; // Import du composant DevisView
+import DevisView from './components/DevisView'; 
+import FactView from './components/FactView';
 import './global';
 
 const mountComponent = (id, Component) => {
@@ -25,4 +26,5 @@ mountComponent('new-devis-root', NouveauDevis);
 mountComponent('factures-index-root', FacturesIndex);
 mountComponent('new-fact-root', NouvelleFacture);
 mountComponent('projets-root', Projets);
-mountComponent('devis-view-root', DevisView); // Montage sans Router
+mountComponent('devis-view-root', DevisView); 
+mountComponent('fact-view-root', FactView);
